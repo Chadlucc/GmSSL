@@ -164,7 +164,7 @@ int SM9_DigestInit(EVP_MD_CTX *ctx, unsigned char prefix,
 {
 	if (!EVP_DigestInit_ex(ctx, md, impl)
 		|| !EVP_DigestUpdate(ctx, &prefix, 1)) {
-		ERR_print_errors_fp(stderr);
+		//ERR_print_errors_fp(stderr);
 		return 0;
 	}
 	return 1;

@@ -23,7 +23,25 @@
 #include <e_os.h>
 
 #include <string.h>
+#ifdef OPENSSL_SECURE_MEMORY
+# include <stdlib.h>
+# include <assert.h>
+# include <unistd.h>
+# include <sys/types.h>
+# include <sys/mman.h>
+# if defined(OPENSSL_SYS_LINUX)
+#  include <sys/syscall.h>
+#  if defined(SYS_mlock2)
+#   include <linux/mman.h>
+#   include <errno.h>
+#  endif
+#  include <sys/param.h>
+# endif
+# include <sys/stat.h>
+# include <fcntl.h>
+#endif
 
+/*
 #if defined(OPENSSL_SYS_LINUX) || defined(OPENSSL_SYS_UNIX)
 # define IMPLEMENTED
 # include <stdlib.h>
@@ -35,7 +53,7 @@
 # include <sys/stat.h>
 # include <fcntl.h>
 #endif
-
+*/
 #define CLEAR(p, s) OPENSSL_cleanse(p, s)
 #ifndef PAGE_SIZE
 # define PAGE_SIZE    4096

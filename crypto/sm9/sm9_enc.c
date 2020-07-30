@@ -245,7 +245,7 @@ int SM9_wrap_key(int type, /* NID_sm9kdf_with_sm3 */
 	if (!SM9_hash1(hash1_md, &h, id, idlen, SM9_HID_ENC, n, bn_ctx)
 		|| !EC_POINT_mul(group, C, h, NULL, NULL, bn_ctx)
 		|| !EC_POINT_add(group, C, C, Ppube, bn_ctx)) {
-		ERR_print_errors_fp(stderr);
+		//ERR_print_errors_fp(stderr);
 		SM9err(SM9_F_SM9_WRAP_KEY, ERR_R_EC_LIB);
 		goto end;
 	}

@@ -50,6 +50,7 @@
 #ifndef HEADER_SM9_LCL_H
 #define HEADER_SM9_LCL_H
 
+#include <stdio.h>
 #include <openssl/err.h>
 #include <openssl/sm9.h>
 #include "../../e_os.h"

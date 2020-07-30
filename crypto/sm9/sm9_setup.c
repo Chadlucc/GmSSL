@@ -172,7 +172,7 @@ SM9MasterSecret *SM9_generate_master_secret(int pairing, int scheme, int hash1)
 		goto end;
 	}
 	if (!ASN1_OCTET_STRING_set(msk->pointPpub, buf, (int)len)) {
-		ERR_print_errors_fp(stderr);
+		//ERR_print_errors_fp(stderr);
 		goto end;
 	}
 

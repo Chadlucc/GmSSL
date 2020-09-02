@@ -1,5 +1,12 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <openssl/evp.h>
+#include <openssl/err.h>
+#include <openssl/sm2.h>
+#include <openssl/pem.h>
+#include <openssl/objects.h>
+#include <openssl/is_gmssl.h>
 EC_KEY *EC_KEYGenerate(void)
 {
 	EC_KEY *ret;

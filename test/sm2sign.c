@@ -1,43 +1,34 @@
 #include <stdio.h>
 #include <string.h>
-#include "libsm.h"
-struct SM2PrivateKey {
-	EC_KEY *ec_key;
-};
-
-struct SM2PublicKey {
-	EC_KEY *ec_key;
-};
-
-SM2PrivateKey *SM2PrivateKeyGenerate(void)
+EC_KEY *EC_KEYGenerate(void)
 {
-	SM2PrivateKey *ret;
-	if (!(ret = OPENSSL_malloc(sizeof(SM2PrivateKey)))
+	EC_KEY *ret;
+	if (!(ret = OPENSSL_malloc(sizeof(EC_KEY)))
 		|| !(ret->ec_key = EC_KEY_new_by_curve_name(NID_sm2p256v1))
 		|| !EC_KEY_generate_key(ret->ec_key)) {
 		ERR_print_errors_fp(stderr);
-		SM2PrivateKeyFree(ret);
+		EC_KEYFree(ret);
 		return NULL;
 	}
 	return ret;
 }
 
-SM2PrivateKey *SM2PrivateKeyFromPEM(FILE *fp, const char *password)
+EC_KEY *EC_KEYFromPEM(FILE *fp, const char *password)
 {
-	SM2PrivateKey *ret;
+	EC_KEY *ret;
 	EVP_PKEY *pkey = NULL;
-	if (!(ret = OPENSSL_malloc(sizeof(SM2PrivateKey)))
+	if (!(ret = OPENSSL_malloc(sizeof(EC_KEY)))
 		|| !(pkey = PEM_read_PrivateKey(fp, NULL, NULL, (void *)password))
 		|| !(ret->ec_key = EVP_PKEY_get1_EC_KEY(pkey))) {
 		ERR_print_errors_fp(stderr);
-		SM2PrivateKeyFree(ret);
+		EC_KEYFree(ret);
 		ret = NULL;
 	}
 	EVP_PKEY_free(pkey);
 	return ret;
 }
 
-int SM2PrivateKeyToPEM(SM2PrivateKey *sk, FILE *fp, const char *password)
+int EC_KEYToPEM(EC_KEY *sk, FILE *fp, const char *password)
 {
 	int ret = 0;
 	EVP_PKEY *pkey = NULL;
@@ -55,40 +46,40 @@ int SM2PrivateKeyToPEM(SM2PrivateKey *sk, FILE *fp, const char *password)
 	return ret;
 }
 
-void SM2PrivateKeyFree(SM2PrivateKey *sk)
+void EC_KEYFree(EC_KEY *sk)
 {
 	if (sk)
 		EC_KEY_free(sk->ec_key);
 	OPENSSL_free(sk);
 }
 
-SM2PublicKey *SM2PrivateKeyExtractPublicKey(SM2PrivateKey *sk)
+EC_KEY *EC_KEYExtractPublicKey(EC_KEY *sk)
 {
-	SM2PublicKey *ret;
-	if (!(ret = OPENSSL_zalloc(sizeof(SM2PublicKey)))
+	EC_KEY *ret;
+	if (!(ret = OPENSSL_zalloc(sizeof(EC_KEY)))
 		|| !(ret->ec_key = EC_KEY_new_by_curve_name(NID_sm2p256v1))
 		|| !EC_KEY_set_public_key(ret->ec_key,
 			EC_KEY_get0_public_key(sk->ec_key))) {
 		ERR_print_errors_fp(stderr);
-		SM2PublicKeyFree(ret);
+		EC_KEYFree(ret);
 		ret = NULL;
 	}
 	return ret;
 }
 
-SM2PublicKey *SM2PublicKeyFromPEM(FILE *fp)
+EC_KEY *EC_KEYFromPEM(FILE *fp)
 {
-	SM2PublicKey *ret;
-	if (!(ret = OPENSSL_zalloc(sizeof(SM2PublicKey)))
+	EC_KEY *ret;
+	if (!(ret = OPENSSL_zalloc(sizeof(EC_KEY)))
 		|| !(ret->ec_key = PEM_read_EC_PUBKEY(fp, NULL, NULL, NULL))) {
 		ERR_print_errors_fp(stderr);
-		SM2PublicKeyFree(ret);
+		EC_KEYFree(ret);
 		ret = NULL;
 	}
 	return ret;
 }
 
-int SM2PublicKeyToPEM(SM2PublicKey *pk, FILE *fp)
+int EC_KEYToPEM(EC_KEY *pk, FILE *fp)
 {
 	if (!PEM_write_EC_PUBKEY(fp, pk->ec_key)) {
 		ERR_print_errors_fp(stderr);
@@ -97,14 +88,14 @@ int SM2PublicKeyToPEM(SM2PublicKey *pk, FILE *fp)
 	return 0;
 }
 
-void SM2PublicKeyFree(SM2PublicKey *pk)
+void EC_KEYFree(EC_KEY *pk)
 {
 	if (pk)
 		EC_KEY_free(pk->ec_key);
 	OPENSSL_free(pk);
 }
 
-int SM2ComputeIDDigest(unsigned char z[32], const char *id, SM2PublicKey *pk)
+int SM2ComputeIDDigest(unsigned char z[32], const char *id, EC_KEY *pk)
 {
 	size_t len = 32;
 	if (!SM2_compute_id_digest(EVP_sm3(), id, strlen(id),
@@ -117,7 +108,7 @@ int SM2ComputeIDDigest(unsigned char z[32], const char *id, SM2PublicKey *pk)
 
 int SM2ComputeMessageDigest(unsigned char dgst[32],
 	const unsigned char *msg, size_t msglen,
-	const char *id, SM2PublicKey *pk)
+	const char *id, EC_KEY *pk)
 {
 	size_t dgstlen = 32;
 	if (!SM2_compute_message_digest(EVP_sm3(), EVP_sm3(),
@@ -129,7 +120,7 @@ int SM2ComputeMessageDigest(unsigned char dgst[32],
 	return 0;
 }
 
-int SM2SignDigest(const unsigned char dgst[32], unsigned char *sig, size_t *siglen, SM2PrivateKey *sk)
+int SM2SignDigest(const unsigned char dgst[32], unsigned char *sig, size_t *siglen, EC_KEY *sk)
 {
 	unsigned int len = (unsigned int)*siglen;
 	if (!SM2_sign(NID_undef, dgst, 32, sig, &len, sk->ec_key)) {
@@ -141,7 +132,7 @@ int SM2SignDigest(const unsigned char dgst[32], unsigned char *sig, size_t *sigl
 }
 
 int SM2VerifyDigest(const unsigned char dgst[32], const unsigned char *sig,
-	size_t siglen, SM2PublicKey *pk)
+	size_t siglen, EC_KEY *pk)
 {
 
 	int r;
@@ -184,7 +175,7 @@ void SM2ContextFree(SM2Context *ctx)
 	OPENSSL_free(ctx);
 }
 
-int SM2SignInit(SM2Context *ctx, const char *id, SM2PrivateKey *sk)
+int SM2SignInit(SM2Context *ctx, const char *id, EC_KEY *sk)
 {
 	unsigned char z[32];
 	size_t len = sizeof(z);
@@ -224,7 +215,7 @@ int SM2SignFinal(SM2Context *ctx, unsigned char *sig, size_t *siglen)
 	return 0;
 }
 
-int SM2VerifyInit(SM2Context *ctx, const char *id, SM2PublicKey *pk)
+int SM2VerifyInit(SM2Context *ctx, const char *id, EC_KEY *pk)
 {
 	unsigned char z[32];
 	size_t len = sizeof(z);
@@ -274,16 +265,16 @@ int SM2VerifyFinal(SM2Context *ctx, unsigned char *sig, size_t siglen)
 
 int main(int argc, char **argv)
 {
-	SM2PrivateKey *sk = NULL;
-	SM2PublicKey *pk = NULL;
+	EC_KEY *sk = NULL;
+	EC_KEY *pk = NULL;
 	SM2Context *ctx = NULL;
 	unsigned char dgst[32];
 	unsigned char sig[80];
 	size_t siglen = sizeof(sig);
 	size_t i;
 
-	if (!(sk = SM2PrivateKeyGenerate())
-		|| !(pk = SM2PrivateKeyExtractPublicKey(sk))) {
+	if (!(sk = EC_KEYGenerate())
+		|| !(pk = EC_KEYExtractPublicKey(sk))) {
 		fprintf(stderr, "error: %s %d\n", __FILE__, __LINE__);
 		goto end;
 	}
@@ -321,8 +312,8 @@ int main(int argc, char **argv)
 	printf("verification success!\n");
 
 end:
-	SM2PrivateKeyFree(sk);
-	SM2PublicKeyFree(pk);
+	EC_KEYFree(sk);
+	EC_KEYFree(pk);
 	SM2ContextFree(ctx);
 	return 0;
 }

@@ -87,7 +87,7 @@ int RAND_poll(void)
     RAND_add(&curr_pid, sizeof curr_pid, 1);
     curr_pid = 0;
 
-    curr_uid = getuid();
+    curr_uid = 1;//getuid();
     RAND_add(&curr_uid, sizeof curr_uid, 1);
     curr_uid = 0;
 
@@ -235,11 +235,11 @@ int RAND_poll(void)
                     FD_ZERO(&fset);
                     FD_SET(fd, &fset);
 
-                    if (select(fd + 1, &fset, NULL, NULL, &t) >= 0) {
+                    /*if (select(fd + 1, &fset, NULL, NULL, &t) >= 0) {
                         usec = t.tv_usec;
                         if (FD_ISSET(fd, &fset))
                             try_read = 1;
-                    } else
+                    } else*/
                         usec = 0;
                 }
 #   endif
@@ -297,7 +297,7 @@ int RAND_poll(void)
     /* put in some default random data, we need more than just this */
     l = curr_pid;
     RAND_add(&l, sizeof(l), 0.0);
-    l = getuid();
+    l = 1;//getuid();
     RAND_add(&l, sizeof(l), 0.0);
 
     l = time(NULL);

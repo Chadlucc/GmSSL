@@ -4,13 +4,13 @@ CC = riscv64-unknown-elf-gcc
 AR = riscv64-unknown-elf-ar
 LD = riscv64-unknown-elf-ld
 
-CKBLIBC ?= /home/data/ckb/ckb-c-stdlib-master/libc
-CKBVM ?= /home/data/ckb/ckb-vm-test-suite/binary/target/release/asm64
+CKBLIBC ?= /home/gmssl/ckb/ckb-c-stdlib-master/libc
+CKBVM ?= /home/gmssl/ckb/ckb-vm-test-suite/binary/target/release/asm64
 CFLAGS	?= 
 WARNING_CFLAGS ?=  -Wall -Wextra
 LDFLAGS ?= 
 
-LOCAL_CFLAGS = $(WARNING_CFLAGS) -I../GmSSL-master/include/ -D_FILE_OFFSET_BITS=64
+LOCAL_CFLAGS = $(WARNING_CFLAGS) -D_FILE_OFFSET_BITS=64
 LOCAL_LDFLAGS =
 
 .SILENT:
@@ -21,7 +21,7 @@ all: sm3
 	echo "Build sm3 done!"
 
 # add --verbose to dump more information
-sm3: sm3.c ../GmSSL-master/libcrypto.a  
+sm3: sm3.c 
 	echo "RISCV ${CFLAGS} $(LDFLAGS) $^"
 	$(CC) ${CFLAGS} ${LOCAL_CFLAGS} $(LOCAL_LDFLAGS) $(LDFLAGS) -o $@ $^
 

@@ -161,3 +161,30 @@ fn main() {
 		}
 }
 ```
+
+### Generate CKB-VM (Configured with cycle caculation)
+
+We need to generate ckb-vm first. 
+```
+root@gmssl:~/ckb/GmSSL# cd /home/gmssl/ckb/ckb-vm-test-suite/
+root@gmssl:~/ckb/ckb-vm-test-suite# ./test.sh 
+```
+
+After generated the ckb-vm, we can use it to caculate the running cycles of sm2\sm3\sm9.
+
+
+
+```
+root@gmssl:~# cd /home/gmssl/ckb/GmSSL/ckb/
+root@gmssl:~/ckb/GmSSL/ckb# make run
+```
+We can get something like these below
+
+```
+running /home/gmssl/ckb/ckb-vm-test-suite/binary/target/release/asm64 sm3
+Run result: Ok(0)
+Total cycles consumed: 104581
+Transfer cycles: 1475, running cycles: 103106
+
+Done. There should be no output(return 0).
+```

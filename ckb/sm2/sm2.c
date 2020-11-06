@@ -160,25 +160,91 @@ end:
 	return ec_key;
 }
 
-static int test_sm2_sign(const EC_GROUP *group, const char *xP, const char *yP)
+static int sm2_sig_verify(const EC_GROUP *group, const char *xP, const char *yP,const char *r,const char *s,unsigned char *dgst_test,size_t dgstlen)
 {
 	int ret = 0;
-	int type = NID_undef;
-	size_t dgstlen;
-	size_t siglen;
-
 	EC_KEY *pubkey = NULL;
-	unsigned char dgst_test[] = {0xb5,0x24,0xf5,0x52,0xcd,0x82,0xb8,0xb0,0x28,0x47,0x6e,0x00,0x5c,0x37,0x7f,0xb1,0x9a,0x87,0xe6,0xfc,0x68,0x2d,0x48,0xbb,0x5d,0x42,0xe3,0xd9,0xb9,0xef,0xfe,0x76};
-	unsigned char sig_test[] = {0x30,0x44,0x02,0x20,0x40,0xf1,0xec,0x59,0xf7,0x93,0xd9,0xf4,0x9e,0x09,0xdc,0xef,0x49,0x13,0x0d,0x41,0x94,0xf7,0x9f,0xb1,0xee,0xd2,0xca,0xa5,0x5b,0xac,0xdb,0x49,0xc4,0xe7,0x55,0xd1,0x02,0x20,0x6f,0xc6,0xda,0xc3,0x2c,0x5d,0x5c,0xf1,0x0c,0x77,0xdf,0xb2,0x0f,0x7c,0x2e,0xb6,0x67,0xa4,0x57,0x87,0x2f,0xb0,0x9e,0xc5,0x63,0x27,0xa6,0x7e,0xc7,0xde,0xeb,0xe7};
-	dgstlen = sizeof(dgst_test);
-	siglen = sizeof(sig_test);
+	ECDSA_SIG *sig;
+	BIGNUM *sig_r = NULL;
+	BIGNUM *sig_s = NULL;
+
+	BN_hex2bn(&sig_r,r);//sig r
+	BN_hex2bn(&sig_s,s);//sig s
+
+	if (!(sig = ECDSA_SIG_new())) 
+	{
+		goto err;
+	}
+
+	if (!(ECDSA_SIG_set0(sig,sig_r,sig_s))) 
+	{
+		goto err;
+	}
+
 
 	if (!(pubkey = new_ec_key(group, NULL, xP, yP))) 
 	{
 		goto err;
 	}
 
-	if (1 != SM2_verify(type, dgst_test, dgstlen, sig_test, siglen, pubkey)) 
+
+	if (1 != SM2_do_verify(dgst_test, dgstlen,sig, pubkey)) 
+	{
+		goto err;
+	}
+	ret = 1;
+err:
+	if (pubkey) EC_KEY_free(pubkey);
+	return ret;
+}
+
+static int sm2_sm3_sig_verify(const EC_GROUP *group, const char *xP, const char *yP,const char *r,const char *s,const unsigned char *M,size_t Mlen,const char *id,size_t idlen)
+{
+	int ret = 0;
+	EC_KEY *pubkey = NULL;
+	ECDSA_SIG *sig;
+	BIGNUM *sig_r = NULL;
+	BIGNUM *sig_s = NULL;
+	const EVP_MD *id_md = EVP_sm3();
+	const EVP_MD *msg_md = EVP_sm3();
+	unsigned char dgst[EVP_MAX_MD_SIZE];
+	size_t dgstlen = sizeof(dgst);
+
+	BN_hex2bn(&sig_r,r);//sig r
+	BN_hex2bn(&sig_s,s);//sig s
+
+	if (!(sig = ECDSA_SIG_new())) 
+	{
+		goto err;
+	}
+
+	if (!(ECDSA_SIG_set0(sig,sig_r,sig_s))) 
+	{
+		goto err;
+	}
+
+
+	if (!(pubkey = new_ec_key(group, NULL, xP, yP))) 
+	{
+		goto err;
+	}
+
+
+	if (!SM2_compute_message_digest(id_md, 
+	msg_md,
+	M, 
+	Mlen, 
+	id, 
+	idlen,
+	dgst, 
+	&dgstlen, 
+	pubkey)) 
+	{
+		goto err;
+	}
+
+
+	if (1 != SM2_do_verify(dgst, dgstlen,sig, pubkey)) 
 	{
 		goto err;
 	}
@@ -190,33 +256,67 @@ err:
 
 int main(int argc, char **argv)
 {
-	int err = 0;
-	EC_GROUP *sm2p256test = NULL;
+	int err = 0,suc = 0;
+	EC_GROUP *sm2p256 = NULL;
+	unsigned char dgst_test[] = {0XF0,0XB4,0X3E,0X94,0XBA,0X45,0XAC,0XCA,0XAC,0XE6,0X92,0XED,0X53,0X43,0X82,0XEB,0X17,0XE6,0XAB,0X5A,0X19,0XCE,0X7B,0X31,0XF4,0X48,0X6F,0XDF,0XC0,0XD2,0X86,0X40};
+	size_t dgstlen = sizeof(dgst_test);
 
-	sm2p256test = new_ec_group(1,
-		"8542D69E4C044F18E8B92435BF6FF7DE457283915C45517D722EDB8B08F1DFC3",
-		"787968B4FA32C3FD2417842E73BBFEFF2F3C848B6831D7E0EC65228B3937E498",
-		"63E4C6D3B23B0C849CF84241484BFE48F61D59A5B16BA06E6E12D1DA27C5249A",
-		"421DEBD61B62EAB6746434EBC3CC315E32220B3BADD50BDC4C4E6C147FEDD43D",
-		"0680512BCBB42C07D47349D2153B70C4E5D7FDFCBFA36EA1A85841B9E46E09A2",
-		"8542D69E4C044F18E8B92435BF6FF7DD297720630485628D5AE74EE7C32E79B7",
+//	This is the official standard parameter of SM2 algorithm,which also can be changed.
+	sm2p256 = new_ec_group(1,
+        "FFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFF",  
+        "FFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF00000000FFFFFFFFFFFFFFFC",  
+        "28E9FA9E9D9F5E344D5A9E4BCF6509A7F39789F515AB8F92DDBCBD414D940E93",  
+        "32C4AE2C1F1981195F9904466A39C9948FE30BBFF2660BE1715A4589334C74C7",  
+        "BC3736A2F4F6779C59BDCEE36B692153D0A9877CC62A474002DF32E52139F0A0",
+		"FFFFFFFEFFFFFFFFFFFFFFFFFFFFFFFF7203DF6B21C6052B53BBF40939D54123",
 		"1");
-	if ( !sm2p256test ) 
+	if ( !sm2p256 ) 
 	{
 		err++;
 		goto end;
 	}
 
-	if (!test_sm2_sign(sm2p256test,"0AE4C7798AA0F119471BEE11825BE46202BB79E2A5844495E97C04FF4DF2548A","7C0240F88F1CD4E16352A73C17B7F16F07353E53A176D684A9FE0C6BB798E857")) 
+	if (!sm2_sig_verify(sm2p256,
+	"09F9DF311E5421A150DD7D161E4BC5C672179FAD1833FC076BB08FF356F35020",//public key x
+	"CCEA490CE26775A52DC6EA718CC1AA600AED05FBF35E084A6632F6072DA9AD13",//public key y
+	"F5A03B0648D2C4630EEAC513E1BB81A15944DA3827D5B74143AC7EACEEE720B3",//sig r
+	"B1B6AA29DF212FD8763182BC0D421CA1BB9038FD1F7F42D4840B69C485BBC1AA",//sig s
+	dgst_test,//eg. dgst_test = sm3(M + sm3(id + sm2 parameter + public key))
+	dgstlen)) 
 	{
-		printf("sm2 sign p256 failed\n");
+		printf("sm2 sign real failed\n");
 		err++;
+		goto end;	
 	} 
 	else 
 	{
-		printf("sm2 sign p256 passed\n");
+		suc++;
+		printf("sm2 sign real passed\n");	
 	}
+
+
+	if (!sm2_sm3_sig_verify(sm2p256,
+	"09F9DF311E5421A150DD7D161E4BC5C672179FAD1833FC076BB08FF356F35020",//publik key x
+	"CCEA490CE26775A52DC6EA718CC1AA600AED05FBF35E084A6632F6072DA9AD13",//public key y
+	"F5A03B0648D2C4630EEAC513E1BB81A15944DA3827D5B74143AC7EACEEE720B3",//sig r
+	"B1B6AA29DF212FD8763182BC0D421CA1BB9038FD1F7F42D4840B69C485BBC1AA",//sig s
+	(const unsigned char *)"message digest",//Message
+	strlen("message digest"),
+	"1234567812345678",//user id
+	strlen("1234567812345678")
+	)) 
+	{
+		printf("sm2 sign real failed\n");
+		err++;
+		goto end;
+	} 
+	else 
+	{
+		suc++;
+		printf("sm2 sign real passed\n");
+	}
+//*/
+	return suc;
 end:
-	EC_GROUP_free(sm2p256test);
 	return 0;
 }

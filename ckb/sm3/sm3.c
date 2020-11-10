@@ -351,7 +351,8 @@ int sm3_test()
 	else return 0;
 }
 
-void main()
+int main()
 {
 	sm3_test();
+	return 0;
 }

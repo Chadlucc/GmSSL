@@ -334,26 +334,8 @@ void sm3_string(const unsigned char* msg, size_t msglen, unsigned char dgst[SM3_
 }
 
 
-unsigned char Msg[(1<<25)];
 
-void sm3_speed()
-{
-	unsigned char MsgHash[SM3_DIGEST_LENGTH];
-	clock_t t1, t2;
-	size_t all_data,len;
-	all_data = sizeof(Msg);
 
-	len = (1 << 13);
-
-	for ( len; len > 0; len = len >>1 )
-	{
-		t1 = clock();
-		for (size_t i = 0; i < len; i++)sm3_string(Msg, all_data/len, MsgHash);
-		t2 = clock();//
-		printf("%10zd times * %10zd Byte costs  ", len, all_data / len);
-		printf("%10.3lfs,  speed %10.3lf MB/s\n", ((double)((size_t)t2 - t1)) / (double)CLOCKS_PER_SEC, (((double)(all_data)) / (((double)((size_t)t2 - t1)) / (double)CLOCKS_PER_SEC))/((double)(1<<20)));
-	}
-}
 
 int sm3_test()
 {
@@ -371,10 +353,5 @@ int sm3_test()
 
 void main()
 {
-	if (sm3_test())
-	{
-		printf("sm3 test OK\n");
-		sm3_speed();
-	}
-	
+	sm3_test();
 }

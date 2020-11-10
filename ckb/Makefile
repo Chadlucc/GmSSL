@@ -4,8 +4,8 @@ CC = riscv64-unknown-elf-gcc
 AR = riscv64-unknown-elf-ar
 LD = riscv64-unknown-elf-ld
 
-CKBLIBC ?= /home/gmssl/ckb/ckb-c-stdlib-master/libc
-CKBVM ?= /home/gmssl/ckb/ckb-vm-test-suite/binary/target/release/asm64
+CKBLIBC ?= /home/data/ckb/ckb-c-stdlib-master/libc
+CKBVM ?= /home/data/ckb/ckb-vm-test-suite/binary/target/release/asm64 
 CFLAGS	?= 
 WARNING_CFLAGS ?=  -Wall -Wextra
 LDFLAGS ?= 
@@ -17,18 +17,23 @@ LOCAL_LDFLAGS =
 
 .PHONY: all clean all
 
-all: sm3
+all: sm2_bin sm3_bin
+	echo "Build sm2 done!"
 	echo "Build sm3 done!"
 
 # add --verbose to dump more information
-sm3: sm3.c 
+sm2_bin: sm2/sm2.c 
+	echo "RISCV ${CFLAGS} ../libcrypto.a -I../include $(LDFLAGS) $^"
+	$(CC) ${CFLAGS} ${LOCAL_CFLAGS} $(LOCAL_LDFLAGS)  $(LDFLAGS)  -o $@ $^ ../libcrypto.a -I../include 
+sm3_bin: sm3/sm3.c 
 	echo "RISCV ${CFLAGS} $(LDFLAGS) $^"
 	$(CC) ${CFLAGS} ${LOCAL_CFLAGS} $(LOCAL_LDFLAGS) $(LDFLAGS) -o $@ $^
 
-run: sm3
-	echo running $(CKBVM) sm3
-	$(CKBVM) sm3
-	echo "Done. There should be no output(return 0)."
+run: sm2_bin sm3_bin
+	echo running $(CKBVM) sm2_bin
+	$(CKBVM)  sm2_bin
+	echo running $(CKBVM) sm3_bin
+	$(CKBVM)  sm3_bin
 
 fail: sm3
 	echo running $(CKBVM) sm3
